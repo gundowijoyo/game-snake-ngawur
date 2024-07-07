@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body {
+            display: grid;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            overflow: hidden;
+        }
+        #gameCanvas {
+            border: 1px solid #000;
+            background-color: #fff;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .control-button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        .control-button:hover {
+            background-color: #45a049;
+        }
+        .coin-counter {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div class="controls">
+        <button class="control-button" id="upButton">Up</button>
+        <div>
+            <button class="control-button" id="leftButton">Left</button>
+            <button class="control-button" id="rightButton">Right</button>
+        </div>
+        <button class="control-button" id="downButton">Down</button>
+    </div>
+    <div class="coin-counter">
+        Coins: <span id="coinCount">0</span>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const gridSize = 20;
+        let snake = [{ x: 100, y: 100 }];
+        let dx = gridSize;
+        let dy = 0;
+        let food = getRandomFoodPosition();
+        let coins = 0;
+
+        const coinCountElement = document.getElementById('coinCount');
+
+        function drawSnake() {
+            snake.forEach(drawSnakePart);
+        }
+
+        function drawSnakePart(part) {
+            ctx.fillStyle = 'green';
+            ctx.fillRect(part.x, part.y, gridSize, gridSize);
+        }
+
+        function moveSnake() {
+            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+            snake.unshift(head);
+            if (head.x === food.x && head.y === food.y) {
+                food = getRandomFoodPosition();
+                coins++;
+                updateCoinCounter();
+            } else {
+                snake.pop();
+            }
+        }
+
+        function getRandomFoodPosition() {
+            const x = Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize;
+            const y = Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize;
+            return { x, y };
+        }
+
+        function drawFood() {
+            ctx.fillStyle = 'red';
+            ctx.fillRect(food.x, food.y, gridSize, gridSize);
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function changeDirection(event) {
+            const keyPressed = event.key;
+            switch (keyPressed) {
+                case 'ArrowUp':
+                    if (dy === 0) {
+                        dx = 0;
+                        dy = -gridSize;
+                    }
+                    break;
+                case 'ArrowDown':
+                    if (dy === 0) {
+                        dx = 0;
+                        dy = gridSize;
+                    }
+                    break;
+                case 'ArrowLeft':
+                    if (dx === 0) {
+                        dx = -gridSize;
+                        dy = 0;
+                    }
+                    break;
+                case 'ArrowRight':
+                    if (dx === 0) {
+                        dx = gridSize;
+                        dy = 0;
+                    }
+                    break;
+            }
+        }
+
+        function checkCollision() {
+            const head = snake[0];
+            // Check if snake hits itself
+            for (let i = 1; i < snake.length; i++) {
+                if (head.x === snake[i].x && head.y === snake[i].y) {
+                    return true;
+                }
+            }
+            // Check if snake hits walls
+            const hitLeftWall = head.x < 0;
+            const hitRightWall = head.x >= canvas.width;
+            const hitTopWall = head.y < 0;
+            const hitBottomWall = head.y >= canvas.height;
+            return hitLeftWall || hitRightWall || hitTopWall || hitBottomWall;
+        }
+
+        function main() {
+            if (checkCollision()) {
+                alert('Game Over!');
+                resetGame();
+                return;
+            }
+
+            clearCanvas();
+            drawFood();
+            drawSnake();
+            moveSnake();
+
+            setTimeout(main, 100);
+        }
+
+        function updateCoinCounter() {
+            coinCountElement.textContent = coins;
+            localStorage.setItem('snakeGameCoins', coins);
+        }
+
+        function resetGame() {
+            snake = [{ x: 100, y: 100 }];
+            dx = gridSize;
+            dy = 0;
+            food = getRandomFoodPosition();
+            coins = 0;
+            updateCoinCounter();
+            main();
+        }
+
+        document.addEventListener('keydown', changeDirection);
+
+        document.getElementById('upButton').addEventListener('click', () => {
+            if (dy === 0) {
+                dx = 0;
+                dy = -gridSize;
+            }
+        });
+        document.getElementById('downButton').addEventListener('click', () => {
+            if (dy === 0) {
+                dx = 0;
+                dy = gridSize;
+            }
+        });
+        document.getElementById('leftButton').addEventListener('click', () => {
+            if (dx === 0) {
+                dx = -gridSize;
+                dy = 0;
+            }
+        });
+        document.getElementById('rightButton').addEventListener('click', () => {
+            if (dx === 0) {
+                dx = gridSize;
+                dy = 0;
+            }
+        });
+
+        // Check if there are stored coins in local storage
+        const storedCoins = localStorage.getItem('snakeGameCoins');
+        if (storedCoins) {
+            coins = parseInt(storedCoins, 10);
+            updateCoinCounter();
+        }
+
+        main();
+    </script>
+</body>
+</html>
